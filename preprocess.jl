@@ -118,7 +118,7 @@ function create_offset(d::Data)
 end
 
 
-function modify_offset(of::Array{Int64, 1}, batchsize::Int)
+function modify_offset(of::Array{Int32, 1}, batchsize::Int)
     result = Int32[]
     for i = 1:length(of) - 1 # TODO take care of the last entry
         nit = of[i]
@@ -134,7 +134,7 @@ function modify_offset(of::Array{Int64, 1}, batchsize::Int)
 end
 
 
-function create_minibatch(sequences::Array{Array,1}, batchsize::Int, st::Int, en::Int)
+function create_minibatch(sequences::Array{Array,1}, batchsize::Int, st::Int, en::Int, vocabsize::Int)
     seqlen = length(sequences[st])
     data = [ falses(batchsize, vocabsize) for i=1:seqlen]
     sentences = sequences[st:en]
@@ -146,6 +146,16 @@ function create_minibatch(sequences::Array{Array,1}, batchsize::Int, st::Int, en
         end
     end
     return data
+end
+
+
+function ibuild_sentence(index_to_word::Array{AbstractString,1}, sequence::Array{BitArray{2}, 1}, kth::Int)
+    sentence = Any[]
+    for i=1:length(sequence)
+        z = find(x->x==true, sequence[i][kth, :])
+        append!(sentence, index_to_word[z])
+    end
+    return sentence
 end
 
 # TODO: test create_minibatch by hand and test whole idea with small data

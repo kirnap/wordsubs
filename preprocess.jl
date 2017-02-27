@@ -9,12 +9,11 @@ const ULIMIT = 300
 type Data
     word_to_index::Dict{AbstractString, Int}
     index_to_word::Vector{AbstractString}
-    batchsize::Int
     sequences::Array
 end
 
 
-function Data(datafile; word_to_index=nothing, vocabfile=nothing, batchsize=20)
+function Data(datafile; word_to_index=nothing, vocabfile=nothing)
     
     vocab_exists = (word_to_index != nothing)
     if !vocab_exists
@@ -51,7 +50,7 @@ function Data(datafile; word_to_index=nothing, vocabfile=nothing, batchsize=20)
         index_to_word[index] = word
     end
     sort!(sequences, by=x->length(x), rev=true)
-    Data(word_to_index, index_to_word, batchsize, sequences)
+    Data(word_to_index, index_to_word, sequences)
 end
 
 
@@ -168,8 +167,6 @@ function next_seq(sequences::Array{Array, 1}, mof::Array{Int32, 1}, index::Int, 
     seq = create_minibatch(sequences, batchsize, st, en, vocabsize)
     return seq
 end
-
-
 
 # sample usage:
 # @time d = Data("../bilstm-in-Knet8/data/nounCompound/google_sets/noun_google_data";vocabfile ="../bilstm-in-Knet8/data/nounCompound/google_sets/google_noun10k.vocab");

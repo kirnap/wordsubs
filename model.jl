@@ -71,7 +71,7 @@ function forward(parameters, states, input)
 end
 
 
-function loss(parameters, states, sequence)
+function loss(parameters, states, sequence, values=[])
     total = 0.0
     count = 0
     atype = typeof(AutoGrad.getval(parameters[1]))
@@ -108,6 +108,7 @@ function loss(parameters, states, sequence)
         ygold = convert(atype, sequence[i])
         total += sum(ygold .* ynorm)
     end
+    push!(values, AutoGrad.getval((-total/count)))
     return - (total/count)
 end
 

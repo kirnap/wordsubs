@@ -3,7 +3,8 @@
 const SOS = "<s>"
 const EOS = "</s>"
 const UNK = "<unk>"
-const LLIMIT = 2
+const LLIMIT = 3
+const ULIMIT = 300
 
 type Data
     word_to_index::Dict{AbstractString, Int}
@@ -41,7 +42,7 @@ function Data(datafile; word_to_index=nothing, vocabfile=nothing, batchsize=20)
             push!(words, index)
         end
         push!(words, word_to_index[EOS])
-        (length(words)>3) && push!(sequences, words)
+        (length(words) < ULIMIT) && (length(words)>LLIMIT) && push!(sequences, words)
     end
     close(stream)
     vocabsize = length(word_to_index)
@@ -114,6 +115,7 @@ function create_offset(d::Data)
             prev = curr
         end
     end
+    (offsets[end] != Int32(length(s))) && push!(offsets, length(s))
     return offsets
 end
 
@@ -135,6 +137,7 @@ end
 
 
 function create_minibatch(sequences::Array{Array,1}, batchsize::Int, st::Int, en::Int, vocabsize::Int)
+    st = Int64(st)
     seqlen = length(sequences[st])
     data = [ falses(batchsize, vocabsize) for i=1:seqlen]
     sentences = sequences[st:en]
@@ -158,8 +161,16 @@ function ibuild_sentence(index_to_word::Array{AbstractString,1}, sequence::Array
     return sentence
 end
 
-# TODO: test create_minibatch by hand and test whole idea with small data
+
+function next_seq(sequences::Array{Array, 1}, mof::Array{Int32, 1}, index::Int, vocabsize::Int, batchsize::Int)
+    st = Int64(mof[index])
+    en = mof[index+1]-1
+    seq = create_minibatch(sequences, batchsize, st, en, vocabsize)
+    return seq
+end
+
+
 
 # sample usage:
 # @time d = Data("../bilstm-in-Knet8/data/nounCompound/google_sets/noun_google_data";vocabfile ="../bilstm-in-Knet8/data/nounCompound/google_sets/google_noun10k.vocab");
-# @time p = Data("../bilstm-in-Knet8/data/ptb/ptb.train.txt");
+

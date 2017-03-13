@@ -74,10 +74,9 @@ end
 function ibuild_sentence(index_to_word::Array{AbstractString,1}, sequence::Array{Any,1}, kth::Int)
     sentence = Any[]
     for i=1:length(sequence)
-        z = d[i][kth]
+        z = sequence[i][kth]
         @assert(length(z) == 1)
         push!(sentence, index_to_word[z])
     end
     return sentence
 end
-

@@ -79,8 +79,9 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
     fhiddens = Array(Any, length(sequence))
     sf = copy(states)
     for i=1:length(sequence)-1
-        input = convert(atype, sequence[i])
-        x = input * model[:fembed]
+        # input = convert(atype, sequence[i])
+        # x = input * model[:fembed]
+        x = model[:fembed][sequence[i], :]
         h = forward(model[:forw], sf, x)
         fhiddens[i+1] = copy(h)
     end
@@ -90,8 +91,9 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
     bhiddens = Array(Any, length(sequence))
     sb = copy(states)
     for i=length(sequence):-1:2
-        input = convert(atype, sequence[i])
-        x = input * model[:bembed]
+        #input = convert(atype, sequence[i])
+        #x = input * model[:bembed]
+        x = model[:bembed][sequence[i], :]
         bhiddens[i-1] = forward(model[:back], sb, x)
     end
     bhiddens[end] = convert(atype, zeros(size(bhiddens[2])))
@@ -116,9 +118,9 @@ lossgradient = grad(bilstm)
 function oparams{T<:Number}(::Array{T}; o...)
     o = Dict(o)
     if haskey(o, :gclip)
-        return Adam(;lr=o[:gclip])
+        return Sgd(;lr=o[:gclip])
     else
-        return Adam()
+        return Sgd()
     end
 end
 
@@ -126,9 +128,9 @@ end
 function oparams{T<:Number}(::KnetArray{T}; o...)
     o = Dict(o)
     if haskey(o, :gclip)
-        return Adam(;gclip=o[:gclip])
+        return Sgd(;gclip=o[:gclip])
     else
-        return Adam()
+        return Sgd()
     end
 end
 
@@ -140,5 +142,13 @@ initopts(model; o...) = oparams(model; o...)
 
 function train(model, state, sequence, opts; pdrop=(0,0))
     gloss = lossgradient(model, state, sequence;pdrop=pdrop)
+    # for k in keys(gloss)
+    #     if k == :forw || k == :back || k == :soft
+    #         axpy!(2, gloss[k][1], model[k][1])
+    #         axpy!(2, gloss[k][2], model[k][2])
+    #     elseif k == :fembed || k == :bembed
+    #         axpy!(2, gloss[k], model[k])
+    #     end
+    # end
     update!(model, gloss, opts)
 end

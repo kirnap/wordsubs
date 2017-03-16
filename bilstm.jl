@@ -70,6 +70,19 @@ function dropout(x, p)
 end
 
 
+function logprob(output, ypred)
+    nrows,ncols = size(ypred)
+    index = similar(output)
+    @inbounds for i=1:length(output)
+        index[i] = i + (output[i]-1)*nrows
+    end
+    o1 = logp(ypred,2)
+    o2 = o1[index]
+    o3 = sum(o2)
+    return o3
+end
+
+
 function bilstm(model, states, sequence; pdrop=(0, 0))
     total = 0.0
     count = 0
@@ -79,8 +92,6 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
     fhiddens = Array(Any, length(sequence))
     sf = copy(states)
     for i=1:length(sequence)-1
-        # input = convert(atype, sequence[i])
-        # x = input * model[:fembed]
         x = model[:fembed][sequence[i], :]
         h = forward(model[:forw], sf, x)
         fhiddens[i+1] = copy(h)
@@ -91,8 +102,6 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
     bhiddens = Array(Any, length(sequence))
     sb = copy(states)
     for i=length(sequence):-1:2
-        #input = convert(atype, sequence[i])
-        #x = input * model[:bembed]
         x = model[:bembed][sequence[i], :]
         bhiddens[i-1] = forward(model[:back], sb, x)
     end
@@ -103,10 +112,8 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
         hf = dropout(fhiddens[i], pdrop[1])
         hb = dropout(bhiddens[i], pdrop[2])
         ypred = hcat(hf, hb) * model[:soft][1] .+ model[:soft][2]
-        ynorm = logp(ypred, 2)
-        ygold = convert(atype, sequence[i])
-        count += size(ygold, 1)
-        total += sum(ygold .* ynorm)
+        total += logprob(sequence[i], ypred)
+        count += length(sequence[i])
     end
     return - total / count
 end

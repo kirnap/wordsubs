@@ -119,43 +119,16 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
 end
 
 
-lossgradient = grad(bilstm)
+bilstmgrad = grad(bilstm)
 
 
-function oparams{T<:Number}(::Array{T}; o...)
-    o = Dict(o)
-    if haskey(o, :gclip)
-        return Sgd(;lr=o[:gclip])
-    else
-        return Sgd()
-    end
-end
-
-
-function oparams{T<:Number}(::KnetArray{T}; o...)
-    o = Dict(o)
-    if haskey(o, :gclip)
-        return Sgd(;gclip=o[:gclip])
-    else
-        return Sgd()
-    end
-end
-
-
-oparams(a::Associative; o...)=Dict(k=>oparams(v;o...) for (k,v) in a)
-oparams(a; o...)=map(x->oparams(x;o...), a)
-initopts(model; o...) = oparams(model; o...)
+oparams{T<:Number}(::KnetArray{T},otype; o...)=otype(;o...)
+oparams{T<:Number}(::Array{T},otype; o...)=otype(;o...)
+oparams(a::Associative,otype; o...)=Dict(k=>oparams(v,otype;o...) for (k,v) in a)
+oparams(a,otype; o...)=map(x->oparams(x,otype;o...), a)
 
 
 function train(model, state, sequence, opts; pdrop=(0,0))
-    gloss = lossgradient(model, state, sequence;pdrop=pdrop)
-    # for k in keys(gloss)
-    #     if k == :forw || k == :back || k == :soft
-    #         axpy!(2, gloss[k][1], model[k][1])
-    #         axpy!(2, gloss[k][2], model[k][2])
-    #     elseif k == :fembed || k == :bembed
-    #         axpy!(2, gloss[k], model[k])
-    #     end
-    # end
+    gloss = bilstmgrad(model, state, sequence; pdrop=pdrop)
     update!(model, gloss, opts)
 end

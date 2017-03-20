@@ -98,12 +98,14 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
     end
     fhiddens[1] = convert(atype, zeros(size(fhiddens[2])))
 
+
     # backward lstm
     bhiddens = Array(Any, length(sequence))
     sb = copy(states)
     for i=length(sequence):-1:2
         x = model[:bembed][sequence[i], :]
-        bhiddens[i-1] = forward(model[:back], sb, x)
+        h  = forward(model[:back], sb, x)
+        bhiddens[i-1] = copy(h)
     end
     bhiddens[end] = convert(atype, zeros(size(bhiddens[2])))
 

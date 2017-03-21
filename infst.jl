@@ -5,11 +5,25 @@ UNK = "<unk>"
 
 
 function create_vocab(vocabfile::AbstractString)
+    ercount = 0
     result = Dict{AbstractString, Int}(SOS=>1, EOS=>2, UNK=>3)
     open(vocabfile) do f
         for line in eachline(f)
             words= split(line)
-            @assert(length(words) == 1, "The vocabulary file seems broken")
+            try
+                @assert(length(words) == 1, "The vocabulary file seems broken")
+            catch e
+                ercount += 1
+                if (length(words) == 0)
+                    if (ercount == 5)
+                        info("There is empty line in vocabulary file")
+                        ercount = 0
+                    end
+                    continue
+                else
+                    warn("Something unexpected happen in vocabfile")
+                end
+            end
             word = words[1]
             get!(result, word, 1+length(result))
         end

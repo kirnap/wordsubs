@@ -33,7 +33,7 @@ end
 
 
 """ Reads from infinite stream modifies the s paramater in the light of sequence lengths """
-function readstream!(f::IO, s::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}, maxlines::Int=100, llimit::Int=3, ulimit::Int=900)
+function readstream!(f::IO, s::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}; maxlines=100, llimit=3, ulimit=1000)
     k = 0
     while (k != maxlines)
         eof(f) && return false
@@ -69,10 +69,10 @@ end
 
 
 # Collects the sentences from the stream and modifies sdict based on that gives a random length minibatch
-function nextbatch(f::IO, sdict::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}, batchsize::Int)
+function nextbatch(f::IO, sdict::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}, batchsize::Int; o...)
     slens = collect(filter(x->length(sdict[x])>=batchsize, keys(sdict)))
     if length(slens) < 10
-        readstream!(f, sdict, vocab, 1000)
+        readstream!(f, sdict, vocab; o...)
         slens = collect(filter(x->length(sdict[x])>=batchsize, keys(sdict)))
         if length(slens) == 0
             return nothing

@@ -33,12 +33,12 @@ end
 
 
 """ Reads from infinite stream modifies the s paramater in the light of sequence lengths """
-function readstream!(f::IO, s::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}; maxlines=100, llimit=3, ulimit=1000)
+function readstream!(f::IO, s::Dict{Int64, Array{Any, 1}}, vocab::Dict{AbstractString, Int64}; maxlines=100, llimit=3, ulimit=300)
     k = 0
     while (k != maxlines)
         eof(f) && return false
         words = split(readline(f))
-        ((length(words) < llimit) || (length(words) > ulimit)) && continue
+        ((length(words) < llimit) || (length(words) > ulimit-2)) && continue
         seq = Int32[]
         push!(seq, vocab[SOS])
         for word in words
@@ -93,4 +93,34 @@ function ibuild_sentence(index_to_word::Array{AbstractString,1}, sequence::Array
         push!(sentence, index_to_word[z])
     end
     return sentence
+end
+
+
+function create_testdata(file::AbstractString, vocab::Dict{AbstractString, Int64}, batchsize::Int; ulimit=30, llimit=3)
+    stream = open(file)
+    sdict = Dict{Int64, Array{Any, 1}}();
+    for line in eachline(stream)
+        words = split(line)
+        ((length(words) < llimit) || (length(words) > ulimit)) && continue
+        seq = Int32[]
+        push!(seq, vocab[SOS])
+        for word in words
+            index = get(vocab, word, vocab[UNK])
+            push!(seq, index)
+        end
+        push!(seq, vocab[EOS])
+        skey = length(seq)
+        (!haskey(sdict, skey)) && (sdict[skey]= Any[])
+        push!(sdict[skey], seq)
+    end
+    
+    data = Any[]
+    for k in keys(sdict)
+        while length(sdict[k]) >= batchsize
+            sequence = sdict[k][1:batchsize]
+            deleteat!(sdict[k], 1:batchsize)
+            push!(data, mbatch(sequence, batchsize))
+        end
+    end
+    return data
 end

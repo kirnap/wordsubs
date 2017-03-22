@@ -139,3 +139,12 @@ end
 convertmodel{T<:Number}(x::KnetArray{T}) = convert(Array{T}, x)
 convertmodel(a::Associative)=Dict(k=>convertmodel(v) for (k,v) in a)
 convertmodel(a) = map(x->convertmodel(x), a)
+
+
+function devperp(m, s, dev)
+    devloss = 0
+    for d in dev
+        devloss += bilstm(m, s, d)
+    end
+    return exp(devloss / length(dev))
+end

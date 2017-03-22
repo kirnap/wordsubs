@@ -134,3 +134,8 @@ function train(model, state, sequence, opts; pdrop=(0,0))
     gloss = bilstmgrad(model, state, sequence; pdrop=pdrop)
     update!(model, gloss, opts)
 end
+
+
+convertmodel{T<:Number}(x::KnetArray{T}) = convert(Array{T}, x)
+convertmodel(a::Associative)=Dict(k=>convertmodel(v) for (k,v) in a)
+convertmodel(a) = map(x->convertmodel(x), a)

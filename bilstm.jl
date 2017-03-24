@@ -137,6 +137,7 @@ end
 
 
 convertmodel{T<:Number}(x::KnetArray{T}) = convert(Array{T}, x)
+convertmodel{T<:Number}(x::Array{T}) = convert(Array{T}, x)
 convertmodel(a::Associative)=Dict(k=>convertmodel(v) for (k,v) in a)
 convertmodel(a) = map(x->convertmodel(x), a)
 

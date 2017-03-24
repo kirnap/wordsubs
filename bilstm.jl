@@ -61,7 +61,7 @@ end
 
 
 # dropout layer
-function dropout(x, p)
+function m_dropout(x, p)
     if p > 0
         return x .* (rand!(similar(AutoGrad.getval(x))) .> p) * (1/(1-p))
     else
@@ -111,8 +111,8 @@ function bilstm(model, states, sequence; pdrop=(0, 0))
 
     # concatenate layer
     for i=1:length(fhiddens)
-        hf = dropout(fhiddens[i], pdrop[1])
-        hb = dropout(bhiddens[i], pdrop[2])
+        hf = m_dropout(fhiddens[i], pdrop[1])
+        hb = m_dropout(bhiddens[i], pdrop[2])
         ypred = hcat(hf, hb) * model[:soft][1] .+ model[:soft][2]
         total += logprob(sequence[i], ypred)
         count += length(sequence[i])
